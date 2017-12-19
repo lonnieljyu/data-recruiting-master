@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+  <link rel="stylesheet" href="pandoc.css" type="text/css" />
+</head>
+<body>
+<h1 id="ordergroove-data-engineer-test">OrderGroove Data Engineer Test</h1>
+<h2 id="high-level">High Level</h2>
+<p>Hi there, in this test you'll be provided a simple flask app and giving it a new data backend - we've provided a naive reference implementation. For your convenience, we've provided a <code>Vagrantfile</code> with provisioning scripts to help you get started. Using vagrant is <em>optional</em> and you may freely use the platform of your choice, so long as you provide some extra details on your system to help us evaluate your submission.</p>
+<p>Time spent should be less than four hours.</p>
+<h4 id="the-exercise">The exercise</h4>
+<ol style="list-style-type: decimal">
+<li>Make any helpful changes to the database or data models as you see fit, probably depends on point (3) below.</li>
+<li>Write any interface code required for the 4 API endpoints.</li>
+<li>Specifically: for the <code>GET @ /dashboard/symbol/&lt;symbol&gt;</code> endpoint, use one of these technologies:
+<ol style="list-style-type: decimal">
+<li>elasticsearch</li>
+<li>mongodb</li>
+<li>rabbitmq</li>
+<li>redis</li>
+<li>neo4j</li>
+<li>some other 'nosql' or 'Big Data' tech. The ones above are already installed via <code>vagrant up</code> for your convenience. If you're unsure whether something you want to use qualifies just send us a note.</li>
+</ol></li>
+</ol>
+<p>We also installed MariaDB for you with user <code>og</code>, password <code>og</code> and all privileges on database <code>og</code>. Whatever, naming is hard.</p>
+<h4 id="the-rules">The Rules</h4>
+<ol style="list-style-type: decimal">
+<li>The only changes allowed in <code>server/app.py</code> are to the <code>data_interface</code> assignment L7-8, ie by assigning a new <code>DataInterface</code> implementation. Your <code>DataInterface</code> implementation does not need to be 1-to-1 with any particular technology.</li>
+<li>No changes allowed to <code>client/client.py</code>, <code>server/data_interface.py</code>, <code>server/sqlite_interface.py</code>, <code>server/initdb.py</code>.</li>
+<li>Your implementation should mirror the interface described in <code>server/data_interface:DataInterface</code>.</li>
+<li>All required system changes (<code>pip install</code>, <code>apt-get install</code>, <code>mkdir</code>, config changes, etc) must be reproducible on our end with either a simple <code>vagrant up</code> or detailed in sufficient documentation.</li>
+</ol>
+<p>Note that there is a <code>requirements.txt</code> file located in <code>/vagrant/</code>, feel free to modify and use this in your provision scripts. It may be especially helpful if you decide to not use vagrant.</p>
+<h2 id="the-details">The Details</h2>
+<p>The server's job is pretty simple: just respond to 4 types of requests, 2 for interacting with the client and 2 for the &quot;business user&quot; via a dashboard.</p>
+<h4 id="client-interaction">Client interaction</h4>
+<p>The main interaction with the client is as follows:</p>
+<ol style="list-style-type: decimal">
+<li><code>POST @ /initial</code>. This is the request that initiates any contact between a client and our little app. The client provides some id (<code>uuid.uuid4</code>) and a &quot;symbol&quot;, which is just any char in <code>[a-z]</code>. The role of the server is to respond with it's 'best guess' at whether the symbol is a vowel (yeah it's a silly model).</li>
+<li>The client (already implemented in <code>client.py</code>) takes a look at what the server has said and decides whether it wants to keep talking. It's a bit mercurial but if it does then</li>
+<li><code>POST @/followup</code>. This one just has the client <code>uuid</code>; the client doesn't resend its <code>symbol</code>.</li>
+</ol>
+<h4 id="dashboard">Dashboard</h4>
+<p>The server is also responsible for backstopping a dashboard with some simple aggregates.</p>
+<ul>
+<li><p><code>GET @ /dashboard/symbol/&lt;symbol&gt;</code> where <code>symbol</code> in <code>[a-z]</code>. The response should provide the following summary statistics relating to requests around <code>&lt;symbol&gt;</code>, e.g. for some fake data w symbol <code>e</code>:</p>
+<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript">    <span class="op">{</span>
+      <span class="st">&#39;count&#39;</span><span class="op">:</span> <span class="dv">3650</span><span class="op">,</span>
+      <span class="st">&#39;symbol&#39;</span><span class="op">:</span> u<span class="st">&#39;e&#39;</span><span class="op">,</span>
+      <span class="st">&#39;earliest&#39;</span><span class="op">:</span> u<span class="st">&#39;2017-06-28 19:34:14.486693&#39;</span><span class="op">,</span>
+      <span class="st">&#39;latest&#39;</span><span class="op">:</span> u<span class="st">&#39;2017-06-29 13:15:01.173535&#39;</span><span class="op">,</span>
+      <span class="st">&#39;followups&#39;</span><span class="op">:</span> <span class="dv">65</span>
+    <span class="op">}</span></code></pre></div></li>
+<li><p><code>GET @ /dashboard/range/&lt;lower&gt;/&lt;upper&gt;</code>, where <code>lower</code> and <code>upper</code> are date strings. Get summaries within the given date range:</p>
+<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript">    [
+      <span class="op">{</span>
+        <span class="st">&#39;count&#39;</span><span class="op">:</span> <span class="dv">3650</span><span class="op">,</span>
+        <span class="st">&#39;symbol&#39;</span><span class="op">:</span> u<span class="st">&#39;a&#39;</span><span class="op">,</span>
+        <span class="st">&#39;earliest&#39;</span><span class="op">:</span> u<span class="st">&#39;2017-06-28 17:34:14.486693&#39;</span><span class="op">,</span>
+        <span class="st">&#39;latest&#39;</span><span class="op">:</span> u<span class="st">&#39;2017-06-29 13:15:01.173535&#39;</span><span class="op">,</span>
+        <span class="st">&#39;followups&#39;</span><span class="op">:</span> <span class="dv">65</span>
+      <span class="op">},</span>
+      <span class="op">{</span>
+        <span class="st">&#39;count&#39;</span><span class="op">:</span> <span class="dv">1250</span><span class="op">,</span>
+        <span class="st">&#39;symbol&#39;</span><span class="op">:</span> u<span class="st">&#39;b&#39;</span><span class="op">,</span>
+        <span class="st">&#39;earliest&#39;</span><span class="op">:</span> u<span class="st">&#39;2017-06-28 19:34:14.486693&#39;</span><span class="op">,</span>
+        <span class="st">&#39;latest&#39;</span><span class="op">:</span> u<span class="st">&#39;2017-06-29 12:15:01.173535&#39;</span><span class="op">,</span>
+        <span class="st">&#39;followups&#39;</span><span class="op">:</span> <span class="dv">25</span>
+      <span class="op">},</span>
+      ...
+  ]</code></pre></div></li>
+</ul>
+<h4 id="the-interfaces">The interfaces</h4>
+<p>You are given <code>server/app.py</code> which is a Flask app that hooks into a database interface subclassing <code>server/data_interface.py:DataInterface</code> (or whatever you want, ducktyping etc). We've provided two example interfaces: <code>NullInterface</code> and <code>SQLiteInterface</code>. <code>NullInterface</code> literally does nothing and is only useful for benchmarking an upper bound on your speed. <code>SQLiteInterface</code> does as suggested.</p>
+<p>All of this is to say that there's room for improvement.</p>
+<h2 id="getting-started">Getting started</h2>
+<h4 id="optional-vagrant">Optional: vagrant</h4>
+<p>First, install <a href="https://www.vagrantup.com/">vagrant</a>. Then run these lines and go get some coffee (this takes 10-15 minutes):</p>
+<pre><code>&gt; vagrant up
+&gt; vagrant ssh</code></pre>
+<p>You could speed up future builds using <code>vagrant package</code> or something but that's probably more trouble than it's worth. It'll take quite a while just to build the <code>package.box</code> file. Maybe if you want to reuse our fancy provisioning scripts for yourself in the future or something?</p>
+<p>Anyway, your app and client now live under <code>/vagrant/app/</code>.</p>
+<h4 id="without-vagrant">Without vagrant</h4>
+<p>You'll need to install everything on your own. Also, you'll have to change some hard-coded paths in <code>initdb.py</code>, <code>sqlite_interface.py</code> and the <code>FLASK_APP</code> environmental variable.</p>
+<h4 id="in-general...">In general...</h4>
+<p>To run the app,</p>
+<pre><code>&gt; flask run -h 0.0.0.0</code></pre>
+<p>And the client (change the path if you're not using vagrant).</p>
+<pre><code>&gt; python /vagrant/app/client/client.py</code></pre>
+<p>The client only uses 2 of 4 routes. To see the response from the <code>dashboard</code> routes, we have set up a private network with your VM accesible @ 192.168.50.4. Not on vagrant? Use <code>localhost</code> instead.</p>
+<pre><code>&gt; flask run -h 0.0.0.0
+[In your browser or postman etc] 192.168.50.4:5000/dashboard/symbol/e</code></pre>
+<h4 id="note-on-using-vagrant">Note on using vagrant</h4>
+<p>Using vagrant is <em>optional</em> and is provided as a convenience for you. If you don't use it just let us know any important details about the platform/system you did your work on.</p>
+<p>Since we want to be able to launch your solution via a simple <code>vagrant up</code>, we recommend periodically upgrading your provisioning scripts with any changes and running <code>vagrant destroy &amp;&amp; vagrant up</code>. This way you can help guarantee your VM is free from ad hoc changes that aren't preserved in the provisioning process and which would prevent us from launching on our end. Sad!</p>
+<p>One common tactic when using vagrant is to put all your code within a shared folder. This makes it simultaneously accessible to your favorite editor/IDE and executable within your VM. By default, the folder containing your <code>Vagrantfile</code> is shared in your VM under <code>/vagrant/</code>.</p>
+<p>Any provisioning scripts that need to be executed from userspace should have the <code>privileged: false</code> flag in <code>Vagrantfile</code>. Without this flag all scripts run as root.</p>
+<h2 id="your-solution">Your Solution</h2>
+<h4 id="requirements">Requirements</h4>
+<ol style="list-style-type: decimal">
+<li>All endpoints work and provide accurate data.</li>
+<li>The raw event data must still be stored/accessible for future analysis lol. Tell us where to find this in your writeup.</li>
+<li>Either it just works with <code>vagrant up</code> or has suitable system documentation.</li>
+</ol>
+<h4 id="submission-format">Submission format</h4>
+<p>Just send us any new files and (optionally) your modified <code>Vagrantfile</code> with any extra instructions. Please also provide a brief discussion of the motivations behind your decisions.</p>
+<h4 id="evaluation">Evaluation</h4>
+<p>We will evaluate this using the following criterion (shown in priority order):</p>
+<ol style="list-style-type: decimal">
+<li><em>Design decisions.</em> What changes you made and why. This includes evaluating the performance and scalability of your design. <code>SQLiteInterface</code> is pretty bad, how much better can you do?</li>
+<li><em>Requirements met.</em> See above.</li>
+<li><em>Code quality.</em> Did you write efficient queries, create <a href="https://xkcd.com/1513/">easy to read code</a>, etc?</li>
+<li><em>Documentation.</em> As necessary.</li>
+</ol>
+<p>We will definitely accept partial solutions.</p>
+</body>
+</html>
