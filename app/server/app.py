@@ -6,8 +6,8 @@ from data_interface import NullInterface
 # from bradsinterface import BradsInterface
 
 app = Flask(__name__)
-# data_interface = ElasticSearchInterface()
-data_interface = SQLiteInterface()
+data_interface = ElasticSearchInterface()
+# data_interface = SQLiteInterface()
 # data_interface = NullInterface()
 # data_interface = BradsInterface()  # not tracked but this one was awesome, trust me.
 
