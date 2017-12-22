@@ -1,0 +1,34 @@
+Architecture Design:
+I chose Elasticsearch (ES) over MongoDB as my nosql database due to better aggregation performance.
+The benchmarking results that I've read from other people's work shows ES vastly outperformaing MongoDB on aggregation query speed.
+I cannot confirm the same results without developing both solutions and rigorously testing with the same input data of logarithmically increasing size.
+I am also most familiar with ES out of all the other nosql technologies.
+
+For the ES confirmation, I chose to use one index with one primary shard for both types of POST events.
+One index and one primary shard minimizes the I/O overhead for the one-node Elasticsearch configuration.
+The index refresh rate is one second, enforcing 'realtime' accurate queries at the second scale.
+
+If the GET API calls can be predicted, we can improve write efficiency by manually refreshing the index instead just before the calls are made, i.e. just in time microbatching. 
+We can also track symbol events over time by periodly logging the aggregations, e.g. every hour.
+This data could be used to study symbol event traffic trends.
+For horizontally scaling the ingestion process, Logstash could be used to process the event logs and stash them into ES.
+We can also horizontally scale the ES cluster by manually spinning up nodes and reindexing at low points of traffic.
+For data resilience, we can set up automatic index snapshotting with a robust ES repository.
+
+Schema Design:
+I created an ES mapping where the initial event data is at the document id level and the followup events are nested fields under the initial event.
+In this way, I do not need separate document mappings for both events and I do not need to write joins between initial and followup event data since they are already connected.
+Thus, I do not need to redudantly store the uuid in the followup schema.
+Even though the initial event type is stored in the doc_type, I decided to also store it as an initial event field since future ES versions (6.0+) do not require doc_types in the ES mappings.
+
+Code Quality:
+Unfortunately, I am not adept enough at the Python elasticsearch-dsl module so I wrote queries with the high-level and the low-level ES modules and cannot refactor the code as much as I could.
+Also, I could not write more sophisticted queries to handle summing the followup nested field counts over all initial or grouping by symbols for the ranged aggregates.
+I believe writing better queries would perform better than the workarounds I implemented such as iterating through the responses to count the followups.
+
+Raw Data Location:
+On CentOS, the ES data directory is '/var/lib/elasticsearch' but you won't be able to see the data in plaintext since the data in Lucene indexfiles.
+Instead, you can make ES REST calls to see the data, e.g. 'curl -XGET localhost:9200/events/_search?pretty'. 
+
+Setup:
+vagrant up
