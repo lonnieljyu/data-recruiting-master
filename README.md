@@ -1,5 +1,8 @@
 # Data Engineer Test
 
+This is my submission for a data engineering test.  
+My writeup is in discussion.txt  
+
 ## High Level
 
 Hi there, in this test you'll be provided a simple flask app and giving it a new data backend - we've provided a naive reference implementation. For your convenience, we've provided a `Vagrantfile` with provisioning scripts to help you get started. Using vagrant is *optional* and you may freely use the platform of your choice, so long as you provide some extra details on your system to help us evaluate your submission.
